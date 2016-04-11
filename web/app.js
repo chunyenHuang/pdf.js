@@ -1824,17 +1824,25 @@ window.addEventListener('pagechange', function pagechange(evt) {
 }, true);
 
 var zoomDisabled = false, zoomDisabledTimeout;
-function handleMouseWheel(evt) {
-  var MOUSE_WHEEL_DELTA_FACTOR = 40;
-  var ticks = (evt.type === 'DOMMouseScroll') ? -evt.detail :
-              evt.wheelDelta / MOUSE_WHEEL_DELTA_FACTOR;
-  var direction = (ticks < 0) ? 'zoomOut' : 'zoomIn';
+var MOUSE_WHEEL_PIXEL_MODE = 0;
+var MOUSE_WHEEL_LINE_MODE = 1;
+var MOUSE_WHEEL_PAGE_MODE = 2;
+
+function handleMouseWheel(evt, delta, mode) {
+  var MOUSE_WHEEL_ZOOM_FACTOR = 40;
+  var MOUSE_WHEEL_LINES_PER_PAGE = 50;
+  var MOUSE_WHEEL_PIXELS_PER_PAGE = 12 * MOUSE_WHEEL_LINES_PER_PAGE;
+  if (mode === MOUSE_WHEEL_PIXEL_MODE) {
+    delta /= MOUSE_WHEEL_PIXELS_PER_PAGE;
+  } else if (mode === MOUSE_WHEEL_LINE_MODE) {
+    delta /= MOUSE_WHEEL_LINES_PER_PAGE;
+  }
+  // the delta now is in somewhat page units.
 
   var pdfViewer = PDFViewerApplication.pdfViewer;
   if (pdfViewer.isInPresentationMode) {
     evt.preventDefault();
-    PDFViewerApplication.scrollPresentationMode(ticks *
-                                                MOUSE_WHEEL_DELTA_FACTOR);
+    PDFViewerApplication.scrollPresentationMode(delta);
   } else if (evt.ctrlKey || evt.metaKey) {
     var support = PDFViewerApplication.supportedMouseWheelZoomModifierKeys;
     if ((evt.ctrlKey && !support.ctrlKey) ||
@@ -1850,7 +1858,11 @@ function handleMouseWheel(evt) {
 
     var previousScale = pdfViewer.currentScale;
 
-    PDFViewerApplication[direction](Math.abs(ticks));
+    if (delta < 0) {
+      PDFViewerApplication.zoomOut(-delta / MOUSE_WHEEL_ZOOM_FACTOR);
+    } else if (delta > 0) {
+      PDFViewerApplication.zoomIn(delta / MOUSE_WHEEL_ZOOM_FACTOR);
+    }
 
     var currentScale = pdfViewer.currentScale;
     if (previousScale !== currentScale) {
@@ -1873,8 +1885,28 @@ function handleMouseWheel(evt) {
   }
 }
 
-window.addEventListener('DOMMouseScroll', handleMouseWheel);
-window.addEventListener('mousewheel', handleMouseWheel);
+//#if !(CHROME || MOZCENTRAL)
+if (window.onwheel === undefined) {
+  // window.onwheel is not set, most likely wheel is not supported.
+  window.addEventListener('DOMMouseScroll', function (evt) {
+    var deltaY = evt.detail;
+    var mode = MOUSE_WHEEL_LINE_MODE;
+    if (Math.abs(deltaY) === 32768) {
+      deltaY = deltaY < 0 ? -1 : 1;
+      mode = MOUSE_WHEEL_PAGE_MODE;
+    }
+    handleMouseWheel(evt, -deltaY, mode);
+  });
+  window.addEventListener('mousewheel', function (evt) {
+    var MOUSE_WHEEL_120_PER_PAGE = 2;
+    handleMouseWheel(evt, evt.wheelDeltaY * MOUSE_WHEEL_120_PER_PAGE,
+                     MOUSE_WHEEL_PAGE_MODE);
+  });
+}
+//#endif
+window.addEventListener('wheel', function (evt) {
+  handleMouseWheel(evt, -evt.deltaY, evt.deltaMode);
+});
 
 window.addEventListener('click', function click(evt) {
   if (SecondaryToolbar.opened &&

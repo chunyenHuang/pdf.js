@@ -97,14 +97,14 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
     /**
      * Switches page when the user scrolls (using a scroll wheel or a touchpad)
      * with large enough motion, to prevent accidental page switches.
-     * @param {number} delta - The delta value from the mouse event.
+     * @param {number} delta - The value from the mouse event in page units.
      */
     mouseScroll: function PDFPresentationMode_mouseScroll(delta) {
       if (!this.active) {
         return;
       }
       var MOUSE_SCROLL_COOLDOWN_TIME = 50;
-      var PAGE_SWITCH_THRESHOLD = 120;
+      var PAGE_SWITCH_THRESHOLD = 1.0;
       var PageSwitchDirection = {
         UP: -1,
         DOWN: 1
