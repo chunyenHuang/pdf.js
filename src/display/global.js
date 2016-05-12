@@ -243,7 +243,7 @@
   PDFJS.isEvalSupported = (PDFJS.isEvalSupported === undefined ?
                            true : PDFJS.isEvalSupported);
 
-//#if !MOZCENTRAL
+if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
   var savedOpenExternalLinksInNewWindow = PDFJS.openExternalLinksInNewWindow;
   delete PDFJS.openExternalLinksInNewWindow;
   Object.defineProperty(PDFJS, 'openExternalLinksInNewWindow', {
@@ -275,7 +275,7 @@
      */
     PDFJS.openExternalLinksInNewWindow = savedOpenExternalLinksInNewWindow;
   }
-//#endif
+}
 
   PDFJS.getDocument = displayAPI.getDocument;
   PDFJS.PDFDataRangeTransport = displayAPI.PDFDataRangeTransport;

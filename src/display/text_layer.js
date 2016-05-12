@@ -132,9 +132,8 @@ var renderTextLayer = (function renderTextLayerClosure() {
     }
 
     var canvas = document.createElement('canvas');
-//#if MOZCENTRAL || FIREFOX || GENERIC
-    canvas.mozOpaque = true;
-//#endif
+    canvas.mozOpaque = typeof PDFJSDev === 'undefined' ||
+                       PDFJSDev.test('FIREFOX || MOZCENTRAL || GENERIC');
     var ctx = canvas.getContext('2d', {alpha: false});
 
     var lastFontSize;

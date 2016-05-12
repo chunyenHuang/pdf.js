@@ -25,7 +25,11 @@
     factory((root.pdfjsWebMozPrintCallbackPolyfill = {}));
   }
 }(this, function (exports) {
-//#if !(FIREFOX || MOZCENTRAL)
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+  throw new Error('Module "pdfjs-web/mozPrintCallback_polyfill" shall not ' +
+                  'be used with FIREFOX or MOZCENTRAL build.');
+}
+
   if ('mozPrintCallback' in document.createElement('canvas')) {
     return;
   }
@@ -150,5 +154,4 @@
     window.addEventListener('beforeprint', stopPropagationIfNeeded, false);
     window.addEventListener('afterprint', stopPropagationIfNeeded, false);
   }
-//#endif
 }));

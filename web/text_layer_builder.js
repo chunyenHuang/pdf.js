@@ -306,22 +306,23 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         if (!end) {
           return;
         }
-//#if !(MOZCENTRAL || FIREFOX)
+        if (typeof PDFJSDev === 'undefined' ||
+            !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
         // On non-Firefox browsers, the selection will feel better if the height
         // of the endOfContent div will be adjusted to start at mouse click
         // location -- this will avoid flickering when selections moves up.
         // However it does not work when selection started on empty space.
         var adjustTop = e.target !== div;
-//#if GENERIC
-        adjustTop = adjustTop && window.getComputedStyle(end).
-          getPropertyValue('-moz-user-select') !== 'none';
-//#endif
+        if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+          adjustTop = adjustTop && window.getComputedStyle(end).
+            getPropertyValue('-moz-user-select') !== 'none';
+        }
         if (adjustTop) {
           var divBounds = div.getBoundingClientRect();
           var r = Math.max(0, (e.pageY - divBounds.top) / divBounds.height);
           end.style.top = (r * 100).toFixed(2) + '%';
         }
-//#endif
+        }
         end.classList.add('active');
       });
       div.addEventListener('mouseup', function (e) {
@@ -329,9 +330,10 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         if (!end) {
           return;
         }
-//#if !(MOZCENTRAL || FIREFOX)
-        end.style.top = '';
-//#endif
+        if (typeof PDFJSDev === 'undefined' ||
+            !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+          end.style.top = '';
+        }
         end.classList.remove('active');
       });
     },

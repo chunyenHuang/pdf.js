@@ -104,17 +104,18 @@ var DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000;
 
 function configure(PDFJS) {
   PDFJS.imageResourcesPath = './images/';
-//#if (FIREFOX || MOZCENTRAL || GENERIC || CHROME)
-//PDFJS.workerSrc = '../build/pdf.worker.js';
-//#endif
-//#if !PRODUCTION
-  PDFJS.cMapUrl = '../external/bcmaps/';
-  PDFJS.cMapPacked = true;
-  PDFJS.workerSrc = '../src/worker_loader.js';
-//#else
-//PDFJS.cMapUrl = '../web/cmaps/';
-//PDFJS.cMapPacked = true;
-//#endif
+  if (typeof PDFJSDev !== 'undefined' &&
+      PDFJSDev.test('FIREFOX || MOZCENTRAL || GENERIC || CHROME')) {
+    PDFJS.workerSrc = '../build/pdf.worker.js';
+  }
+  if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
+    PDFJS.cMapUrl = '../external/bcmaps/';
+    PDFJS.cMapPacked = true;
+    PDFJS.workerSrc = '../src/worker_loader.js';
+  } else {
+    PDFJS.cMapUrl = '../web/cmaps/';
+    PDFJS.cMapPacked = true;
+  }
 }
 
 var DefaultExernalServices = {
@@ -415,11 +416,12 @@ var PDFViewerApplication = {
   },
 
   get supportsFullscreen() {
-//#if MOZCENTRAL
-//  var support = document.fullscreenEnabled === true;
-//#else
+    var support;
+  if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('MOZCENTRAL')) {
+    support = document.fullscreenEnabled === true;
+  } else {
     var doc = document.documentElement;
-    var support = !!(doc.requestFullscreen || doc.mozRequestFullScreen ||
+    support = !!(doc.requestFullscreen || doc.mozRequestFullScreen ||
                      doc.webkitRequestFullScreen || doc.msRequestFullscreen);
 
     if (document.fullscreenEnabled === false ||
@@ -428,7 +430,7 @@ var PDFViewerApplication = {
         document.msFullscreenEnabled === false) {
       support = false;
     }
-//#endif
+  }
     if (support && pdfjsLib.PDFJS.disableFullscreen === true) {
       support = false;
     }
@@ -458,8 +460,9 @@ var PDFViewerApplication = {
     return this.externalServices.supportedMouseWheelZoomModifierKeys;
   },
 
-//#if (FIREFOX || MOZCENTRAL || CHROME)
   initPassiveLoading: function pdfViewInitPassiveLoading() {
+if (typeof PDFJSDev !== 'undefined' &&
+    PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
     this.externalServices.initPassiveLoading({
       onOpenWithTransport: function (url, length, transport) {
         PDFViewerApplication.open(url, {range: transport});
@@ -489,8 +492,10 @@ var PDFViewerApplication = {
         PDFViewerApplication.progress(loaded / total);
       }
     });
+} else {
+    throw new Error('Not implemented: initPassiveLoading');
+}
   },
-//#endif
 
   setTitleUsingUrl: function pdfViewSetTitleUsingUrl(url) {
     this.url = url;
@@ -695,12 +700,7 @@ var PDFViewerApplication = {
   },
 
   fallback: function pdfViewFallback(featureId) {
-//#if !PRODUCTION
-    if (true) {
-      return;
-    }
-//#endif
-//#if (FIREFOX || MOZCENTRAL)
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
     // Only trigger the fallback once so we don't spam the user with messages
     // for one PDF.
     if (this.fellback) {
@@ -715,7 +715,7 @@ var PDFViewerApplication = {
         }
         PDFViewerApplication.download();
       });
-//#endif
+}
   },
 
   /**
@@ -751,7 +751,8 @@ var PDFViewerApplication = {
       }
     }
 
-//#if !(FIREFOX || MOZCENTRAL)
+if (typeof PDFJSDev === 'undefined' ||
+    !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
     var errorWrapperConfig = this.appConfig.errorWrapper;
     var errorWrapper = errorWrapperConfig.container;
     errorWrapper.removeAttribute('hidden');
@@ -784,10 +785,10 @@ var PDFViewerApplication = {
     moreInfoButton.removeAttribute('hidden');
     lessInfoButton.setAttribute('hidden', 'true');
     errorMoreInfo.value = moreInfoText;
-//#else
-//  console.error(message + '\n' + moreInfoText);
-//  this.fallback();
-//#endif
+} else {
+    console.error(message + '\n' + moreInfoText);
+    this.fallback();
+}
   },
 
   progress: function pdfViewProgress(level) {
@@ -841,15 +842,14 @@ var PDFViewerApplication = {
     var id = this.documentFingerprint = pdfDocument.fingerprint;
     var store = this.store = new ViewHistory(id);
 
-//#if GENERIC
-    var baseDocumentUrl = null;
-//#endif
-//#if (FIREFOX || MOZCENTRAL)
-//  var baseDocumentUrl = this.url.split('#')[0];
-//#endif
-//#if CHROME
-//  var baseDocumentUrl = location.href.split('#')[0];
-//#endif
+    var baseDocumentUrl;
+    if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+      baseDocumentUrl = null;
+    } else if (PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+      baseDocumentUrl = this.url.split('#')[0];
+    } else if (PDFJSDev.test('CHROME')) {
+      baseDocumentUrl = location.href.split('#')[0];
+    }
     this.pdfLinkService.setDocument(pdfDocument, baseDocumentUrl);
 
     var pdfViewer = this.pdfViewer;
@@ -1008,12 +1008,7 @@ var PDFViewerApplication = {
         self.fallback(pdfjsLib.UNSUPPORTED_FEATURES.forms);
       }
 
-//#if !PRODUCTION
-      if (true) {
-        return;
-      }
-//#endif
-//#if (FIREFOX || MOZCENTRAL)
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
       var versionId = String(info.PDFFormatVersion).slice(-1) | 0;
       var generatorId = 0;
       var KNOWN_GENERATORS = [
@@ -1040,7 +1035,7 @@ var PDFViewerApplication = {
         generator: generatorId,
         formType: formType
       });
-//#endif
+}
     });
   },
 
@@ -1156,16 +1151,12 @@ var PDFViewerApplication = {
       this.pdfViewer.getPageView(i).beforePrint(printContainer);
     }
 
-//#if !PRODUCTION
-    if (true) {
-      return;
+    if (typeof PDFJSDev !== 'undefined' &&
+        PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+      this.externalServices.reportTelemetry({
+        type: 'print'
+      });
     }
-//#endif
-//#if (FIREFOX || MOZCENTRAL)
-    this.externalServices.reportTelemetry({
-      type: 'print'
-    });
-//#endif
   },
 
   // Whether all pages of the PDF have the same width and height.
@@ -1251,16 +1242,17 @@ var PDFViewerApplication = {
     eventBus.on('rotateccw', webViewerRotateCcw);
     eventBus.on('documentproperties', webViewerDocumentProperties);
     eventBus.on('find', webViewerFind);
-//#if GENERIC
-    eventBus.on('fileinputchange', webViewerFileInputChange);
-//#endif
+    if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+      eventBus.on('fileinputchange', webViewerFileInputChange);
+    }
   }
 };
 
-//#if GENERIC
+var validateFileURL;
+if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
 var HOSTED_VIEWER_ORIGINS = ['null',
   'http://mozilla.github.io', 'https://mozilla.github.io'];
-function validateFileURL(file) {
+validateFileURL = function validateFileURL(file) {
   try {
     var viewerOrigin = new URL(window.location.href).origin || 'null';
     if (HOSTED_VIEWER_ORIGINS.indexOf(viewerOrigin) >= 0) {
@@ -1285,8 +1277,8 @@ function validateFileURL(file) {
     PDFViewerApplication.error(loadingErrorMessage, moreInfo);
     throw e;
   }
+};
 }
-//#endif
 
 function loadAndEnablePDFBug(enabledTabs) {
   return new Promise(function (resolve, reject) {
@@ -1307,22 +1299,21 @@ function loadAndEnablePDFBug(enabledTabs) {
 }
 
 function webViewerInitialized() {
-//#if GENERIC
+  var file;
+if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   var queryString = document.location.search.substring(1);
   var params = parseQueryString(queryString);
-  var file = 'file' in params ? params.file : DEFAULT_URL;
+  file = 'file' in params ? params.file : DEFAULT_URL;
   validateFileURL(file);
-//#endif
-//#if (FIREFOX || MOZCENTRAL)
-//var file = window.location.href.split('#')[0];
-//#endif
-//#if CHROME
-//var file = DEFAULT_URL;
-//#endif
+} else if (PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+  file = window.location.href.split('#')[0];
+} else if (PDFJSDev.test('CHROME')) {
+  file = DEFAULT_URL;
+}
 
   var waitForBeforeOpening = [];
   var appConfig = PDFViewerApplication.appConfig;
-//#if GENERIC
+if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   var fileInput = document.createElement('input');
   fileInput.id = appConfig.openFileInputName;
   fileInput.className = 'fileInput';
@@ -1336,19 +1327,15 @@ function webViewerInitialized() {
   } else {
     fileInput.value = null;
   }
-
-//#else
-//appConfig.toolbar.openFile.setAttribute('hidden', 'true');
-//appConfig.secondaryToolbar.openFileButton.setAttribute('hidden', 'true');
-//#endif
+} else {
+  appConfig.toolbar.openFile.setAttribute('hidden', 'true');
+  appConfig.secondaryToolbar.openFileButton.setAttribute('hidden', 'true');
+}
 
   var PDFJS = pdfjsLib.PDFJS;
 
-//#if !PRODUCTION
-  if (true) {
-//#else
-//if (PDFViewerApplication.preferencePdfBugEnabled) {
-//#endif
+  if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) ||
+      PDFViewerApplication.preferencePdfBugEnabled) {
     // Special debugging flags in the hash section of the URL.
     var hash = document.location.hash.substring(1);
     var hashParams = parseQueryString(hash);
@@ -1384,17 +1371,18 @@ function webViewerInitialized() {
       PDFJS.ignoreCurrentPositionOnZoom =
         (hashParams['ignorecurrentpositiononzoom'] === 'true');
     }
-//#if !PRODUCTION
+if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
     if ('disablebcmaps' in hashParams && hashParams['disablebcmaps']) {
       PDFJS.cMapUrl = '../external/cmaps/';
       PDFJS.cMapPacked = false;
     }
-//#endif
-//#if !(FIREFOX || MOZCENTRAL)
+}
+if (typeof PDFJSDev === 'undefined' ||
+    !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
     if ('locale' in hashParams) {
       PDFJS.locale = hashParams['locale'];
     }
-//#endif
+}
     if ('textlayer' in hashParams) {
       switch (hashParams['textlayer']) {
         case 'off':
@@ -1416,16 +1404,16 @@ function webViewerInitialized() {
     }
   }
 
-//#if !(FIREFOX || MOZCENTRAL)
+if (typeof PDFJSDev === 'undefined' ||
+    !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
   mozL10n.setLanguage(PDFJS.locale);
-//#endif
-//#if (FIREFOX || MOZCENTRAL)
+} else {
   if (!PDFViewerApplication.supportsDocumentFonts) {
     PDFJS.disableFontFace = true;
     console.warn(mozL10n.get('web_fonts_disabled', null,
       'Web fonts are disabled: unable to use embedded PDF fonts.'));
   }
-//#endif
+}
 
   if (!PDFViewerApplication.supportsPrinting) {
     appConfig.toolbar.print.classList.add('hidden');
@@ -1522,8 +1510,9 @@ function webViewerInitialized() {
   });
 }
 
-//#if GENERIC
-function webViewerOpenFileViaURL(file) {
+var webViewerOpenFileViaURL;
+if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+webViewerOpenFileViaURL = function webViewerOpenFileViaURL(file) {
   if (file && file.lastIndexOf('file:', 0) === 0) {
     // file:-scheme. Load the contents in the main thread because QtWebKit
     // cannot load file:-URLs in a Web Worker. file:-URLs are usually loaded
@@ -1547,19 +1536,19 @@ function webViewerOpenFileViaURL(file) {
   if (file) {
     PDFViewerApplication.open(file);
   }
+};
+} else if (PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
+webViewerOpenFileViaURL = function webViewerOpenFileViaURL(file) {
+  PDFViewerApplication.setTitleUsingUrl(file);
+  PDFViewerApplication.initPassiveLoading();
+};
+} else {
+webViewerOpenFileViaURL = function webViewerOpenFileURL(file) {
+  if (file) {
+    throw new Error('Not implemented: webViewerOpenFileURL');
+  }
+};
 }
-//#elif (FIREFOX || MOZCENTRAL || CHROME)
-//function webViewerOpenFileViaURL(file) {
-//  PDFViewerApplication.setTitleUsingUrl(file);
-//  PDFViewerApplication.initPassiveLoading();
-//}
-//#else
-//function webViewerOpenFileURL(file) {
-//  if (file) {
-//    throw new Error('Not implemented: webViewerOpenFileURL');
-//  }
-//}
-//#endif
 
 function webViewerPageRendered(e) {
   var pageNumber = e.pageNumber;
@@ -1589,12 +1578,7 @@ function webViewerPageRendered(e) {
     pageNumberInput.classList.remove(PAGE_NUMBER_LOADING_INDICATOR);
   }
 
-//#if !PRODUCTION
-  if (true) {
-    return;
-  }
-//#endif
-//#if (FIREFOX || MOZCENTRAL)
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
   PDFViewerApplication.externalServices.reportTelemetry({
     type: 'pageInfo'
   });
@@ -1605,20 +1589,16 @@ function webViewerPageRendered(e) {
       stats: stats
     });
   });
-//#endif
+}
 }
 
 function webViewerTextLayerRendered(e) {
   var pageIndex = e.pageNumber - 1;
   var pageView = PDFViewerApplication.pdfViewer.getPageView(pageIndex);
 
-//#if !PRODUCTION
-  if (true) {
-    return;
-  }
-//#endif
-//#if (FIREFOX || MOZCENTRAL)
-  if (pageView.textLayer && pageView.textLayer.textDivs &&
+  if (typeof PDFJSDev !== 'undefined' &&
+      PDFJSDev.test('FIREFOX || MOZCENTRAL') &&
+      pageView.textLayer && pageView.textLayer.textDivs &&
       pageView.textLayer.textDivs.length > 0 &&
       !PDFViewerApplication.supportsDocumentColors) {
     console.error(mozL10n.get('document_colors_not_allowed', null,
@@ -1627,7 +1607,6 @@ function webViewerTextLayerRendered(e) {
       'is deactivated in the browser.'));
     PDFViewerApplication.fallback();
   }
-//#endif
 }
 
 function webViewerPageMode(e) {
@@ -1786,7 +1765,8 @@ function webViewerHashchange(e) {
   }
 }
 
-//#if GENERIC
+var webViewerFileInputChange;
+if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
 window.addEventListener('change', function webViewerChange(evt) {
   var files = evt.target.files;
   if (!files || files.length === 0) {
@@ -1796,7 +1776,7 @@ window.addEventListener('change', function webViewerChange(evt) {
     {fileInput: evt.target});
 }, true);
 
-function webViewerFileInputChange(e) {
+webViewerFileInputChange = function webViewerFileInputChange(e) {
   var file = e.fileInput.files[0];
 
   if (!pdfjsLib.PDFJS.disableCreateObjectURL &&
@@ -1821,8 +1801,8 @@ function webViewerFileInputChange(e) {
   appConfig.secondaryToolbar.viewBookmarkButton.setAttribute('hidden', 'true');
   appConfig.toolbar.download.setAttribute('hidden', 'true');
   appConfig.secondaryToolbar.downloadButton.setAttribute('hidden', 'true');
+};
 }
-//#endif
 
 function selectScaleOption(value) {
   var options = PDFViewerApplication.appConfig.toolbar.scaleSelect.options;
@@ -2094,7 +2074,8 @@ window.addEventListener('keydown', function keydown(evt) {
     }
   }
 
-//#if !(FIREFOX || MOZCENTRAL)
+if (typeof PDFJSDev === 'undefined' ||
+    !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
   // CTRL or META without shift
   if (cmd === 1 || cmd === 8) {
     switch (evt.keyCode) {
@@ -2104,7 +2085,7 @@ window.addEventListener('keydown', function keydown(evt) {
         break;
     }
   }
-//#endif
+}
 
   // CTRL+ALT or Option+Command
   if (cmd === 3 || cmd === 10) {

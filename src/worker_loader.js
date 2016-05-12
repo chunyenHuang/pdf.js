@@ -15,7 +15,7 @@
 
 'use strict';
 
-//#if !PRODUCTION
+if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
 //// Patch importScripts to work around a bug in WebKit and Chrome 48-.
 //// See https://crbug.com/572225 and https://webkit.org/b/153317.
 self.importScripts = (function (importScripts) {
@@ -24,7 +24,7 @@ self.importScripts = (function (importScripts) {
     return importScripts.apply(this, arguments);
   };
 })(importScripts);
-//#endif
+}
 
 importScripts('../node_modules/requirejs/require.js');
 

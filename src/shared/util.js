@@ -594,7 +594,8 @@ function isEvalSupported() {
   }
 }
 
-//#if !(FIREFOX || MOZCENTRAL || CHROME)
+if (typeof PDFJSDev === 'undefined' ||
+    !PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
 var Uint32ArrayView = (function Uint32ArrayViewClosure() {
 
   function Uint32ArrayView(buffer, length) {
@@ -636,7 +637,7 @@ var Uint32ArrayView = (function Uint32ArrayViewClosure() {
 })();
 
 exports.Uint32ArrayView = Uint32ArrayView;
-//#endif
+}
 
 var IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 
@@ -1172,7 +1173,8 @@ function createPromiseCapability() {
     }
     return;
   }
-//#if !MOZCENTRAL
+
+if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
   var STATUS_PENDING = 0;
   var STATUS_RESOLVED = 1;
   var STATUS_REJECTED = 2;
@@ -1290,7 +1292,7 @@ function createPromiseCapability() {
     }
   };
 
-  function Promise(resolver) {
+  var Promise = function Promise(resolver) {
     this._status = STATUS_PENDING;
     this._handlers = [];
     try {
@@ -1298,7 +1300,8 @@ function createPromiseCapability() {
     } catch (e) {
       this._reject(e);
     }
-  }
+  };
+
   /**
    * Builds a promise that is resolved when all the passed in promises are
    * resolved.
@@ -1432,9 +1435,10 @@ function createPromiseCapability() {
   };
 
   globalScope.Promise = Promise;
-//#else
-//throw new Error('DOM Promise is not present');
-//#endif
+} else {
+  throw new Error('DOM Promise is not present');
+}
+
 })();
 
 var StatTimer = (function StatTimerClosure() {
@@ -1679,7 +1683,7 @@ function loadJpegStream(id, imageUrl, objs) {
   img.src = imageUrl;
 }
 
-//#if !(MOZCENTRAL)
+if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
 //// Polyfill from https://github.com/Polymer/URL
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
@@ -2298,7 +2302,7 @@ function loadJpegStream(id, imageUrl, objs) {
   scope.URL = jURL;
   /* jshint ignore:end */
 })(globalScope);
-//#endif
+}
 
 exports.FONT_IDENTITY_MATRIX = FONT_IDENTITY_MATRIX;
 exports.IDENTITY_MATRIX = IDENTITY_MATRIX;

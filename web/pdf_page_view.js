@@ -343,9 +343,11 @@ var PDFPageView = (function PDFPageViewClosure() {
       }
       this.canvas = canvas;
 
-//#if MOZCENTRAL || FIREFOX || GENERIC
-      canvas.mozOpaque = true;
-//#endif
+      if (typeof PDFJSDev === 'undefined' ||
+          PDFJSDev.test('MOZCENTRAL || FIREFOX || GENERIC')) {
+        canvas.mozOpaque = true;
+      }
+
       var ctx = canvas.getContext('2d', {alpha: false});
       var outputScale = getOutputScale(ctx);
       this.outputScale = outputScale;
@@ -565,11 +567,12 @@ var PDFPageView = (function PDFPageViewClosure() {
         ctx.fillStyle = 'rgb(255, 255, 255)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.restore();
-//#if !(MOZCENTRAL || FIREFOX)
+if (typeof PDFJSDev === 'undefined' ||
+    !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
         // Used by the mozCurrentTransform polyfill in src/display/canvas.js.
         ctx._transformMatrix =
           [PRINT_OUTPUT_SCALE, 0, 0, PRINT_OUTPUT_SCALE, 0, 0];
-//#endif
+}
         ctx.scale(PRINT_OUTPUT_SCALE, PRINT_OUTPUT_SCALE);
 
         var renderContext = {
